@@ -76,84 +76,117 @@ const index = <T, K extends keyof T>(array: T[], indexes: K[]): Map<string | und
 	return mapsArr;
 };
 
+interface Comment {
+	postId: number;
+	id: number;
+	name: string;
+	email: string;
+	body: string;
+}
+
+interface Album {
+	userId: number;
+	id: number;
+	title: string;
+}
+
+interface Photo {
+	albumId: number;
+	id: number;
+	title: string;
+	url: string;
+	thumbnailUrl: string;
+}
+
+
 // API documentation: https://jsonplaceholder.typicode.com/
 
-https.get('https://jsonplaceholder.typicode.com/posts/1/comments', (response) => {
-	var statusCode = response.statusCode ?? 200;
-	var rawData = '';
+getComments((comments: Array<Comment>)=> getPhotos(comments));
 
-	if (statusCode >= 200 && statusCode <= 299) {
-		throw new Error("Status code failed");
-	}
-
-	response.on('data', (chunk) => {
-		rawData += chunk;
+function getComments(callback: (comments: Array<Comment>, )=>void) {
+	https.get('https://jsonplaceholder.typicode.com/posts/1/comments', (response) => {
+		var statusCode = response.statusCode ?? 200;
+		var rawData = '';
+	
+		if (statusCode >= 200 && statusCode <= 299) {
+			throw new Error("Status code failed");
+		}
+	
+		response.on('data', (chunk) => {
+			rawData += chunk;
+		});
+	
+		response.on('end', () => {
+			try {
+				// TODO:
+				const comments: Array<Comment> = JSON.parse(rawData);
+				// handle code here
+				callback(comments);
+	
+	
+			} catch (e) {
+				console.error('This function is a failure');
+			}
+		});
 	});
+}
 
-	response.on('end', () => {
-		try {
-			// TODO:
-			var comments: {
-				something: string;
-			} = JSON.parse(rawData);
-			// handle code here
+function getPhotos(comments: Array<Comment>) {
+	https.get('https://jsonplaceholder.typicode.com/albums/1/photos', (response) => {
+		const statusCode = response.statusCode ?? 200;
+		let rawData = '';
 
-			https.get('https://jsonplaceholder.typicode.com/albums/1/photos', (response) => {
-				var statusCode = response.statusCode ?? 200;
-				var rawData = '';
+		if (statusCode >= 200 && statusCode <= 299) {
+			throw new Error("Status code failed");
+		}
 
-				if (statusCode >= 200 && statusCode <= 299) {
-					throw new Error("Status code failed");
+		response.on('data', (chunk) => {
+			rawData += chunk;
+		});
+
+		response.on('end', () => {
+			try {
+				const photos: Array<Photo> = JSON.parse(rawData);
+				// handle code here
+
+				getAlbums(comments,photos);
+
+			} catch (e) {
+				console.error('This function is a failure');
+			}
+		});
+	});
+}
+
+function getAlbums(comments: Array<Comment>, photos: Array<Photo>) {
+	https.get('https://jsonplaceholder.typicode.com/users/1/albums', (response) => {
+		const statusCode = response.statusCode ?? 200;
+		let rawData = '';
+
+		if (statusCode >= 200 && statusCode <= 299) {
+			throw new Error("Status code failed");
+		}
+
+		response.on('data', (chunk) => {
+			rawData += chunk;
+		});
+
+		response.on('end', () => {
+			try {
+				const albums: Array<Album> = JSON.parse(rawData);
+				// handle code here
+
+				console.log(comments, photos, albums);
+
+				if (comments[0].id === 1) {
+					console.log(comments[0].name);
 				}
 
-				response.on('data', (chunk) => {
-					rawData += chunk;
-				});
+				// combine data
 
-				response.on('end', () => {
-					try {
-						var photos = JSON.parse(rawData);
-						// handle code here
-
-						https.get('https://jsonplaceholder.typicode.com/users/1/albums', (response) => {
-							var statusCode = response.statusCode ?? 200;
-							var rawData = '';
-
-							if (statusCode >= 200 && statusCode <= 299) {
-								throw new Error("Status code failed");
-							}
-
-							response.on('data', (chunk) => {
-								rawData += chunk;
-							});
-
-							response.on('end', () => {
-								try {
-									var albums = JSON.parse(rawData);
-									// handle code here
-
-									console.log(comments, photos, albums);
-
-									if (comments.id === 1) {
-										console.log(comments.name);
-									}
-
-									// combine data
-
-								} catch (e) {
-									console.error('This function is a failure');
-								}
-							});
-						});
-
-					} catch (e) {
-						console.error('This function is a failure');
-					}
-				});
-			});
-
-		} catch (e) {
-			console.error('This function is a failure');
-		}
+			} catch (e) {
+				console.error('This function is a failure');
+			}
+		});
 	});
-});
+}
