@@ -98,32 +98,28 @@ interface Photo {
 	thumbnailUrl: string;
 }
 
-
 // API documentation: https://jsonplaceholder.typicode.com/
 
-getComments((comments: Array<Comment>)=> getPhotos(comments));
+getComments((comments: Array<Comment>) => getPhotos(comments,
+	(comments: Array<Comment>, photos: Array<Photo>) => getAlbums(comments, photos)));
 
-function getComments(callback: (comments: Array<Comment>, )=>void) {
+function getComments(callback: (comments: Array<Comment>) => void) {
 	https.get('https://jsonplaceholder.typicode.com/posts/1/comments', (response) => {
 		var statusCode = response.statusCode ?? 200;
 		var rawData = '';
-	
-		if (statusCode >= 200 && statusCode <= 299) {
-			throw new Error("Status code failed");
-		}
-	
+
+		checkErrorStatus(statusCode);
+
 		response.on('data', (chunk) => {
 			rawData += chunk;
 		});
-	
+
 		response.on('end', () => {
 			try {
 				// TODO:
 				const comments: Array<Comment> = JSON.parse(rawData);
 				// handle code here
 				callback(comments);
-	
-	
 			} catch (e) {
 				console.error('This function is a failure');
 			}
@@ -131,14 +127,12 @@ function getComments(callback: (comments: Array<Comment>, )=>void) {
 	});
 }
 
-function getPhotos(comments: Array<Comment>) {
+function getPhotos(comments: Array<Comment>, callback: (comments: Array<Comment>, photos: Array<Photo>) => void) {
 	https.get('https://jsonplaceholder.typicode.com/albums/1/photos', (response) => {
 		const statusCode = response.statusCode ?? 200;
 		let rawData = '';
 
-		if (statusCode >= 200 && statusCode <= 299) {
-			throw new Error("Status code failed");
-		}
+		checkErrorStatus(statusCode);
 
 		response.on('data', (chunk) => {
 			rawData += chunk;
@@ -149,8 +143,7 @@ function getPhotos(comments: Array<Comment>) {
 				const photos: Array<Photo> = JSON.parse(rawData);
 				// handle code here
 
-				getAlbums(comments,photos);
-
+				callback(comments, photos);
 			} catch (e) {
 				console.error('This function is a failure');
 			}
@@ -163,9 +156,7 @@ function getAlbums(comments: Array<Comment>, photos: Array<Photo>) {
 		const statusCode = response.statusCode ?? 200;
 		let rawData = '';
 
-		if (statusCode >= 200 && statusCode <= 299) {
-			throw new Error("Status code failed");
-		}
+		checkErrorStatus(statusCode);
 
 		response.on('data', (chunk) => {
 			rawData += chunk;
@@ -181,7 +172,6 @@ function getAlbums(comments: Array<Comment>, photos: Array<Photo>) {
 				if (comments[0].id === 1) {
 					console.log(comments[0].name);
 				}
-
 				// combine data
 
 			} catch (e) {
@@ -189,4 +179,10 @@ function getAlbums(comments: Array<Comment>, photos: Array<Photo>) {
 			}
 		});
 	});
+}
+
+function checkErrorStatus(statusCode: number){
+	if (statusCode >= 400 && statusCode <= 499) {
+		throw new Error("Status code failed");
+	}
 }
